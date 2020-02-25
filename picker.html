@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Favorite Deresute Picker</title>
+<style>
+body {
+    background:#FFF;
+    color:#000;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:100%;
+    background:#F7F7F7;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+</style>
+</head>
+<body>
+<h1>Picker</h1>
+
+<p>You can include any content you want here.</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo</button></p>
+</div>
+
+<div id="secondary">
+<h2>Found favorites</h2>
+
+<ol id="favorites" class="item-list">
+</ol>
+</div>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script>
+'use strict';
+
+var items = [
+    {id: 'AbeNana', image: 'https://i.cinderella.pro/u/c/puchi/100037R-Abe-Nana-Cute.png'},
+    {id: 'AibaYumi', image: 'https://i.cinderella.pro/u/c/puchi/300089N-Aiba-Yumi-Passion.png'},
+    {id: 'AiharaYukino', image: 'https://i.cinderella.pro/u/c/puchi/100323R-Aihara-Yukino.png'},
+    {id: 'AikawaChinatsu', image: 'https://i.cinderella.pro/u/c/puchi/200005N-Aikawa-Chinatsu-Cool.png'},
+    {id: 'AinoNagisa', image: 'https://i.cinderella.pro/u/c/puchi/300237N-Aino-Nagisa-Passion.png'},
+    {id: 'AkagiMiria', image: 'https://i.cinderella.pro/u/c/puchi/300013N-Akagi-Miria-Passion.png'},
+    {id: 'AkanishiErika', image: 'https://i.cinderella.pro/u/c/puchi/100341R-Akanishi-Erika.png'},
+    {id: 'Anastasia', image: 'https://i.cinderella.pro/u/c/puchi/200039R-Anastasia-Cool.png'},
+    {id: 'AnzaiMiyako', image: 'https://i.cinderella.pro/u/c/puchi/100273N-Anzai-Miyako-Cute.png'},
+    {id: 'ArakiHina', image: 'https://i.cinderella.pro/u/c/puchi/200013N-Araki-Hina-Cool.png'},
+    {id: 'AriuraKanna', image: 'https://i.cinderella.pro/u/c/puchi/100221R-Ariura-Kanna-Cute.png'},
+    {id: 'AsanoFuka', image: 'https://i.cinderella.pro/u/c/puchi/100313R-Asano-Fuka.png'},
+    {id: 'AsariNanami', image: 'https://i.cinderella.pro/u/c/puchi/200335SR-Asari-Nanami.png'},
+    {id: 'AyaseHonoka', image: 'https://i.cinderella.pro/u/c/puchi/200077R-Ayase-Honoka-Cool.png'},
+    {id: 'ChitoseKurosaki', image: 'https://i.cinderella.pro/u/c/puchi/100637N-Chitose-Kurosaki.png'},
+    {id: 'ChiyoShirayuki', image: 'https://i.cinderella.pro/u/c/puchi/100655N-Chiyo-Shirayuki.png'},
+    {id: 'Clarice', image: 'https://i.cinderella.pro/u/c/puchi/100105R-Clarice-Cute.png'},
+    {id: 'DomyojiKarin', image: 'https://i.cinderella.pro/u/c/puchi/100079R-Domyoji-Karin-Cute.png'},
+    {id: 'EbiharaNaho', image: 'https://i.cinderella.pro/u/c/puchi/300297R-Ebihara-Naho.png'},
+    {id: 'EgamiTsubaki', image: 'https://i.cinderella.pro/u/c/puchi/100331N-Tsubaki-Egami.png'},
+    {id: 'EtouMisaki', image: 'https://i.cinderella.pro/u/c/puchi/300257R-Eto-Misaki-Passion.png'},
+    {id: 'EveSantaclaus', image: 'https://i.cinderella.pro/u/c/puchi/300305N-Eve-Santaclaus.png'},
+    {id: 'EveSantaclaus', image: 'https://i.cinderella.pro/u/c/puchi/300305N-Eve-Santaclaus.png'},
+    {id: 'FujiiTomo', image: 'https://i.cinderella.pro/u/c/puchi/200177R-Fujii-Tomo-Cool.png'},
+    {id: 'FujimotoRina', image: 'https://i.cinderella.pro/u/c/puchi/100071N-Fujimoto-Rina-Cute.png'},
+    {id: 'FujiwaraHajime', image: 'https://i.cinderella.pro/u/c/puchi/200135N-Fujiwara-Hajime-Cool.png'},
+    {id: 'FukuyamaMai', image: 'https://i.cinderella.pro/u/c/puchi/100069N-Fukuyama-Mai-Cute.png'},
+    {id: 'FurusawaYoriko', image: 'https://i.cinderella.pro/u/c/puchi/200267R-Furusawa-Yoriko-Cool.png'},
+    {id: 'FutabaAnzu', image: 'https://i.cinderella.pro/u/c/puchi/100027R-Futaba-Anzu-Cute.png'},
+    {id: 'GrahamCathy', image: 'https://i.cinderella.pro/u/c/puchi/300307R-Graham-Cathy.png'},
+    {id: 'HamaguchiAyame', image: 'https://i.cinderella.pro/u/c/puchi/300093R-Hamaguchi-Ayame-Passion.png'},
+    {id: 'HamakawaAyuna', image: 'https://i.cinderella.pro/u/c/puchi/300025N-Hamakawa-Ayuna.png'},
+    {id: 'HaradaMiyo', image: 'https://i.cinderella.pro/u/c/puchi/100133R-Harada-Miyo-Cute.png'},
+    {id: 'HattoriToko', image: 'https://i.cinderella.pro/u/c/puchi/200289R-Hattori-Toko-Cool.png'},
+    {id: 'HayamiKanade', image: 'https://i.cinderella.pro/u/c/puchi/200037R-Hayami-Kanade-Cool.png'},
+    {id: 'HayasakaMirei', image: 'https://i.cinderella.pro/u/c/puchi/100143R-Hayasaka-Mirei-Cute.png'},
+    {id: 'Helen', image: 'https://i.cinderella.pro/u/c/puchi/200407SR-Helen.png'},
+    {id: 'HiiragiShino', image: 'https://i.cinderella.pro/u/c/puchi/200101N-Hiiragi-Shino.png'},
+    {id: 'HimekawaYuki', image: 'https://i.cinderella.pro/u/c/puchi/300017N-Himekawa-Yuki-Passion.png'},
+    {id: 'HinoAkane', image: 'https://i.cinderella.pro/u/c/puchi/300031R-Hino-Akane-Passion.png'},
+    {id: 'HisakawaHayate', image: 'https://i.cinderella.pro/u/c/puchi/200657N-Hisakawa-Hayate.png'},
+    {id: 'HisakawaNagi', image: 'https://i.cinderella.pro/u/c/puchi/300643N-Hisakawa-Nagi.png'},
+    {id: 'HojoKaren', image: 'https://i.cinderella.pro/u/c/puchi/200027R-Hojo-Karen-Cool.png'},
+    {id: 'HondoMio', image: 'https://i.cinderella.pro/u/c/puchi/300001R-Honda-Mio-Passion.png'},
+    {id: 'HoriYuko', image: 'https://i.cinderella.pro/u/c/puchi/300021N-Hori-Yuko-Passion.png'},
+    {id: 'HoshiSyoko', image: 'https://i.cinderella.pro/u/c/puchi/300069N-Hoshi-Syoko-Passion.png'},
+    {id: 'HyodoRena', image: 'https://i.cinderella.pro/u/c/puchi/100129R-Hyodo-Rena-Cute.png'},
+    {id: 'IchiharaNina', image: 'https://i.cinderella.pro/u/c/puchi/300113R-Ichihara-Nina-Passion.png'},
+    {id: 'IchinoseShiki', image: 'https://i.cinderella.pro/u/c/puchi/100087N-Ichinose-Shiki-Cute.png'},
+    {id: 'IgarashiKyoko', image: 'https://i.cinderella.pro/u/c/puchi/100099N-Igarashi-Kyoko-Cute.png'},
+    {id: 'IjuinMegumi', image: 'https://i.cinderella.pro/u/c/puchi/200325R-Ijuin-Megumi.png'},
+    {id: 'IkebukuroAkiha', image: 'https://i.cinderella.pro/u/c/puchi/100279R-Ikebukuro-Akiha.png'},
+    {id: 'ImaiKana', image: 'https://i.cinderella.pro/u/c/puchi/100141N-Imai-Kana-Cute.png'},
+    {id: 'ImuraSetsuna', image: 'https://i.cinderella.pro/u/c/puchi/100131R-Imura-Setsuna-Cute.png'},
+    {id: 'JougasakiMika', image: 'https://i.cinderella.pro/u/c/puchi/300027R-Jougasaki-Mika-Passion.png'},
+    {id: 'JougasakiRika', image: 'https://i.cinderella.pro/u/c/puchi/300029R-Jougasaki-Rika-Passion.png'},
+    {id: 'KamijoHaruna', image: 'https://i.cinderella.pro/u/c/puchi/200011N-Kamijo-Haruna-Cool.png'},
+    {id: 'KamiyaNao', image: 'https://i.cinderella.pro/u/c/puchi/200009N-Kamiya-Nao-Cool.png'},
+    {id: 'KanzakiRanko', image: 'https://i.cinderella.pro/u/c/puchi/200025R-Kanzaki-Ranko-Cool.png'},
+    {id: 'KanzakiRanko', image: 'https://i.cinderella.pro/u/c/puchi/200025R-Kanzaki-Ranko-Cool.png'},
+    {id: 'KatagiriSanae', image: 'https://i.cinderella.pro/u/c/puchi/300073N-Katagiri-Sanae-Passion.png'},
+    {id: 'Kate', image: 'https://i.cinderella.pro/u/c/puchi/200029R-Kate-Cool.png'},
+    {id: 'KawashimaMizuki', image: 'https://i.cinderella.pro/u/c/puchi/200007N-Kawashima-Mizuki-Cool.png'},
+    {id: 'KibaManami', image: 'https://i.cinderella.pro/u/c/puchi/200409SR-Kiba-Manami.png'},
+    {id: 'KimuraNatsuki', image: 'https://i.cinderella.pro/u/c/puchi/300009N-Kimura-Natsuki-Passion.png'},
+    {id: 'KirinoAya', image: 'https://i.cinderella.pro/u/c/puchi/200273N-Kirino-Aya-Cool.png'},
+    {id: 'KieyuTsukasa', image: 'https://i.cinderella.pro/u/c/puchi/200279R-Kiryu-Tsukasa-Cool.png'},
+    {id: 'KishibeAyaka', image: 'https://i.cinderella.pro/u/c/puchi/200301N-Kishibe-Ayaka.png'},
+    {id: 'KitaHinako', image: 'https://i.cinderella.pro/u/c/puchi/300121R-Kita-Hinako-Passion.png'},
+    {id: 'KitagawaMahiro', image: 'https://i.cinderella.pro/u/c/puchi/300211R-Kitagawa-Mahiro-Passion.png'},
+    {id: 'KitamiYuzu', image: 'https://i.cinderella.pro/u/c/puchi/300127N-Kitami-Yuzu-Passion.png'},
+    {id: 'KobayakawaSae', image: 'https://i.cinderella.pro/u/c/puchi/100023R-Kobayakawa-Sae-Cute.png'},
+    {id: 'KogaKoharu', image: 'https://i.cinderella.pro/u/c/puchi/100287N-Koga-Koharu-Cute.png'},
+    {id: 'KohinataMiho', image: 'https://i.cinderella.pro/u/c/puchi/100013N-Kohinata-Miho-Cute.png'},
+    {id: 'KomatsuIbuki', image: 'https://i.cinderella.pro/u/c/puchi/300189R-Komatsu-Ibuki-Passion.png'},
+    {id: 'KomuroChinami', image: 'https://i.cinderella.pro/u/c/puchi/200327R-Komuro-Chinami.png'},
+    {id: 'KosekiReina', image: 'https://i.cinderella.pro/u/c/puchi/300177R-Koseki-Reina-Passion.png'},
+    {id: 'KoshimizuSachiko', image: 'https://i.cinderella.pro/u/c/puchi/100073R-Koshimizu-Sachiko-Cute.png'},
+    {id: 'KudoShinobu', image: 'https://i.cinderella.pro/u/c/puchi/100113R-Kudo-Shinobu-Cute.png'},
+    {id: 'KuriharaNene', image: 'https://i.cinderella.pro/u/c/puchi/100247R-Kurihara-Nene-Cute.png'},
+    {id: 'KurokawaChiaki', image: 'https://i.cinderella.pro/u/c/puchi/200003N-Kurokawa-Chiaki-Cool.png'},
+    {id: 'KusakabeWakaba', image: 'https://i.cinderella.pro/u/c/puchi/100163N-Kusakabe-Wakaba.png'},
+    {id: 'Layla', image: 'https://i.cinderella.pro/u/c/puchi/200161R-Layla-Cool.png'},
+    {id: 'MaekawaMiku', image: 'https://i.cinderella.pro/u/c/puchi/100019R-Maekawa-Miku-Cute.png'},
+    {id: 'MakiharaShiho', image: 'https://i.cinderella.pro/u/c/puchi/300255R-Makihara-Shiho-Passion.png'},
+    {id: 'ManabeItsuki', image: 'https://i.cinderella.pro/u/c/puchi/300319N-Manabe-Itsuki.png'},
+    {id: 'ManakaMisato', image: 'https://i.cinderella.pro/u/c/puchi/100011R-Manaka-Misato.png'},
+    {id: 'MaryCochran', image: 'https://i.cinderella.pro/u/c/puchi/300099R-Mary-Cochran-Passion.png'},
+    {id: 'MatobaRisa', image: 'https://i.cinderella.pro/u/c/puchi/300155N-Matoba-Risa-Passion.png'},
+    {id: 'MatsubaraSaya', image: 'https://i.cinderella.pro/u/c/puchi/100217R-Matsubara-Saya-Cute.png'},
+    {id: 'MatsumotoSarina', image: 'https://i.cinderella.pro/u/c/puchi/200069N-Matsumoto-Sarina-Cool.png'},
+    {id: 'MatsunagaRyo', image: 'https://i.cinderella.pro/u/c/puchi/200021R-Matsunaga-Ryo-Cool.png'},
+    {id: 'MatsuoChizuru', image: 'https://i.cinderella.pro/u/c/puchi/200285N-Matsuo-Chizuru-Cool.png'},
+    {id: 'MatsuyamaKumiko', image: 'https://i.cinderella.pro/u/c/puchi/300011N-Matsuyama-Kumiko-Passion.png'},
+    {id: 'MifuneMiyu', image: 'https://i.cinderella.pro/u/c/puchi/200123N-Mifune-Miyu-Cool.png'},
+    {id: 'MimuraKanako', image: 'https://i.cinderella.pro/u/c/puchi/100007N-Mimura-Kanako-Cute.png'},
+    {id: 'MiyamotoFrederica', image: 'https://i.cinderella.pro/u/c/puchi/100021R-Miyamoto-Frederica-Cute.png'},
+    {id: 'MiyoshiSana', image: 'https://i.cinderella.pro/u/c/puchi/300157R-Miyoshi-Sana-Passion.png'},
+    {id: 'MizukiSeira', image: 'https://i.cinderella.pro/u/c/puchi/200155N-Mizuki-Seira-Cool.png'},
+    {id: 'MizumotoYukari', image: 'https://i.cinderella.pro/u/c/puchi/100065N-Mizumoto-Yukari-Cute.png'},
+    {id: 'MizunoMidori', image: 'https://i.cinderella.pro/u/c/puchi/200185R-Mizuno-Midori-Cool.png'},
+    {id: 'MochidaArisa', image: 'https://i.cinderella.pro/u/c/puchi/100005N-Mochida-Arisa-Cute.png'},
+    {id: 'MochizukiHijiri', image: 'https://i.cinderella.pro/u/c/puchi/200219R-Mochizuki-Hijiri.png'},
+    {id: 'MomoiAzuki', image: 'https://i.cinderella.pro/u/c/puchi/100081R-Momoi-Azuki-Cute.png'},
+    {id: 'MorikuboNono', image: 'https://i.cinderella.pro/u/c/puchi/200119R-Morikubo-Nono-Cool.png'},
+    {id: 'MoroboshiKirari', image: 'https://i.cinderella.pro/u/c/puchi/300033R-Moroboshi-Kirari-Passion.png'},
+    {id: 'MukaiTakumi', image: 'https://i.cinderella.pro/u/c/puchi/300105R-Mukai-Takumi-Passion.png'},
+    {id: 'MunakataAtsumi', image: 'https://i.cinderella.pro/u/c/puchi/100159N-Munakata-Atsumi-Cute.png'},
+    {id: 'MurakamiTomoe', image: 'https://i.cinderella.pro/u/c/puchi/300129R-Murakami-Tomoe-Passion.png'},
+    {id: 'MuramatsuSakura', image: 'https://i.cinderella.pro/u/c/puchi/100151R-Muramatsu-Sakura-Cute.png'},
+    {id: 'NagatomiHasumi', image: 'https://i.cinderella.pro/u/c/puchi/100303N-Nagatomi-Hasumi.png'},
+    {id: 'NakanoYuka', image: 'https://i.cinderella.pro/u/c/puchi/100003N-Nakano-Yuka-Cute.png'},
+    {id: 'NambaEmi', image: 'https://i.cinderella.pro/u/c/puchi/300145R-Nanba-Emi-Passion.png'},
+    {id: 'NamikiMeiko', image: 'https://i.cinderella.pro/u/c/puchi/300199R-Namiki-Meiko-Passion.png'},
+    {id: 'NanjoHikaru', image: 'https://i.cinderella.pro/u/c/puchi/300245R-Nanjo-Hikaru-Passion.png'},
+    {id: 'NarumiyaYume', image: 'https://i.cinderella.pro/u/c/puchi/200195N-Narumiya-Yume-Cool.png'},
+    {id: 'Natalia', image: 'https://i.cinderella.pro/u/c/puchi/300075R-Natalia-Passion.png'},
+    {id: 'NinomiyaAsuka', image: 'https://i.cinderella.pro/u/c/puchi/200093R-Ninomiya-Asuka-Cool.png'},
+    {id: 'NishijimaKai', image: 'https://i.cinderella.pro/u/c/puchi/300231R-Nishijima-Kai-Passion.png'},
+    {id: 'NishikawaHonami', image: 'https://i.cinderella.pro/u/c/puchi/200315R-Nishikawa-Honami.png'},
+    {id: 'NittaMinami', image: 'https://i.cinderella.pro/u/c/puchi/200019N-Nitta-Minami-Cool.png'},
+    {id: 'NittaMinami', image: 'https://i.cinderella.pro/u/c/puchi/200019N-Nitta-Minami-Cool.png'},
+    {id: 'NiwaHitomi', image: 'https://i.cinderella.pro/u/c/puchi/100327N-Niwa-Hitomi.png'},
+    {id: 'NonomuraSora', image: 'https://i.cinderella.pro/u/c/puchi/300023R-Nonomura-Sora-Passion.png'},
+    {id: 'OgataChieri', image: 'https://i.cinderella.pro/u/c/puchi/100015N-Ogata-Chieri-Cute.png'},
+    {id: 'OharaMichiru', image: 'https://i.cinderella.pro/u/c/puchi/100233N-Oohara-Michiru-Cute.png'},
+    {id: 'OshihiIzumi', image: 'https://i.cinderella.pro/u/c/puchi/200145R-Ooishi-Izumi-Cool.png'},
+    {id: 'OhnumaKurumi', image: 'https://i.cinderella.pro/u/c/puchi/100265R-Oonuma-Kurumi-Cute.png'},
+    {id: 'OhtaYuu', image: 'https://i.cinderella.pro/u/c/puchi/100257N-Oota-Yu-Cute.png'},
+    {id: 'OhtsukiYui', image: 'https://i.cinderella.pro/u/c/puchi/300015N-Ootsuki-Yui-Passion.png'},
+    {id: 'OikawaShizuku', image: 'https://i.cinderella.pro/u/c/puchi/300071N-Oikawa-Shizuku-Passion.png'},
+    {id: 'OkuyamaSaori', image: 'https://i.cinderella.pro/u/c/puchi/100009N-Okuyama-Saori-Cute.png'},
+    {id: 'OonishiYuriko', image: 'https://i.cinderella.pro/u/c/puchi/100237R-Oonishi-Yuriko-Cute.png'},
+    {id: 'OtokuraYuuki', image: 'https://i.cinderella.pro/u/c/puchi/100213N-Otokura-Yuuki-Cute.png'},
+    {id: 'RyuzakiKaoru', image: 'https://i.cinderella.pro/u/c/puchi/300007N-Ryuzaki-Kaoru-Passion.png'},
+    {id: 'SaejimaKiyomi', image: 'https://i.cinderella.pro/u/c/puchi/300291N-Saejima-Kiyomi.png'},
+    {id: 'SagaisawaFumika', image: 'https://i.cinderella.pro/u/c/puchi/200091N-Sagisawa-Fumika-Cool.png'},
+    {id: 'SaionjiKotoka', image: 'https://i.cinderella.pro/u/c/puchi/100025R-Saionji-Kotoka-Cute.png'},
+    {id: 'SaitoYoko', image: 'https://i.cinderella.pro/u/c/puchi/300381SR-Saito-Yoko.png'},
+    {id: 'SajoYukimi', image: 'https://i.cinderella.pro/u/c/puchi/200075R-Sajo-Yukimi-Cool.png'},
+    {id: 'SakakibaraSatomi', image: 'https://i.cinderella.pro/u/c/puchi/100195R-Sakakibara-Satomi-Cute.png'},
+    {id: 'SakumaMayu', image: 'https://i.cinderella.pro/u/c/puchi/100089R-Sakuma-Mayu-Cute.png'},
+    {id: 'SakuraiMomoka', image: 'https://i.cinderella.pro/u/c/puchi/100127N-Sakurai-Momoka-Cute.png'},
+    {id: 'SasakiChie', image: 'https://i.cinderella.pro/u/c/puchi/200017N-Sasaki-Chie-Cool.png'},
+    {id: 'SatoShin', image: 'https://i.cinderella.pro/u/c/puchi/300241R-Sato-Shin-Passion.png'},
+    {id: 'SawadaMarina', image: 'https://i.cinderella.pro/u/c/puchi/300271N-Sawada-Marina-Passion.png'},
+    {id: 'SekiHiromi', image: 'https://i.cinderella.pro/u/c/puchi/100197N-Seki-Hiromi-Cute.png'},
+    {id: 'SenaShiroi', image: 'https://i.cinderella.pro/u/c/puchi/200287R-Sena-Shiori-Cool.png'},
+    {id: 'SenzakiEma', image: 'https://i.cinderella.pro/u/c/puchi/300081R-Senzaki-Ema-Passion.png'},
+    {id: 'ShibuyaRin', image: 'https://i.cinderella.pro/u/c/puchi/200001R-Shibuya-Rin-Cool.png'},
+    {id: 'ShiinaNoriko', image: 'https://i.cinderella.pro/u/c/puchi/100067N-Shiina-Noriko-Cute.png'},
+    {id: 'ShimamuraUzuki', image: 'https://i.cinderella.pro/u/c/puchi/100001R-Shimamura-Uzuki-Cute.png'},
+    {id: 'ShinoharaRei', image: 'https://i.cinderella.pro/u/c/puchi/200363SR-Shinohara-Rei.png'},
+    {id: 'ShiomiSyuko', image: 'https://i.cinderella.pro/u/c/puchi/200085N-Shiomi-Syuko-Cool.png'},
+    {id: 'ShiragikuHotaru', image: 'https://i.cinderella.pro/u/c/puchi/100119R-Shiragiku-Hotaru-Cute.png'},
+    {id: 'ShirasakaKoume', image: 'https://i.cinderella.pro/u/c/puchi/200083R-Shirasaka-Koume-Cool.png'},
+    {id: 'SomaNatsumi', image: 'https://i.cinderella.pro/u/c/puchi/300261N-Soma-Natsumi-Passion.png'},
+    {id: 'SugisakaUmi', image: 'https://i.cinderella.pro/u/c/puchi/300347SR-Sugisaka-Umi.png'},
+    {id: 'SunazukaAkira', image: 'https://i.cinderella.pro/u/c/puchi/200671N-Sunazuka-Akira.png'},
+    {id: 'SuzumiyaSeika', image: 'https://i.cinderella.pro/u/c/puchi/100171R-Suzumiya-Seika.png'},
+    {id: 'SyutoAoi', image: 'https://i.cinderella.pro/u/c/puchi/300167N-Syuto-Aoi-Passion.png'},
+    {id: 'TachibanaArisu', image: 'https://i.cinderella.pro/u/c/puchi/200067N-Tachibana-Arisu-Cool.png'},
+    {id: 'TadaRiina', image: 'https://i.cinderella.pro/u/c/puchi/200015N-Tada-Riina-Cool.png'},
+    {id: 'TakafujiKako', image: 'https://i.cinderella.pro/u/c/puchi/200337N-Takafuji-Kako.png'},
+    {id: 'TakagakiKaede', image: 'https://i.cinderella.pro/u/c/puchi/200023R-Takagaki-Kaede-Cool.png'},
+    {id: 'TakahashiReiko', image: 'https://i.cinderella.pro/u/c/puchi/200245R-Takahashi-Reiko-Cool.png'},
+    {id: 'TakamineNoa', image: 'https://i.cinderella.pro/u/c/puchi/200303R-Takamine-Noa.png'},
+    {id: 'TakamoriAiko', image: 'https://i.cinderella.pro/u/c/puchi/300003N-Takamori-Aiko-Passion.png'},
+    {id: 'TogoAi', image: 'https://i.cinderella.pro/u/c/puchi/200171N-Togo-Ai-Cool.png'},
+    {id: 'TotokiAiri', image: 'https://i.cinderella.pro/u/c/puchi/300035R-Totoki-Airi-Passion.png'},
+    {id: 'TsuchiyaAko', image: 'https://i.cinderella.pro/u/c/puchi/300153R-Tsuchiya-Ako-Passion.png'},
+    {id: 'TsujinoAkari', image: 'https://i.cinderella.pro/u/c/puchi/100671N-Tsujino-Akari.png'},
+    {id: 'TsukimiyaMiyabi', image: 'https://i.cinderella.pro/u/c/puchi/100183R-Tsukimiya-Miyabi-Cute.png'},
+    {id: 'UedaSuzuho', image: 'https://i.cinderella.pro/u/c/puchi/300195N-Ueda-Suzuho-Passion.png'},
+    {id: 'UjiieMutsumi', image: 'https://i.cinderella.pro/u/c/puchi/200232SR-Ujiie-Mutsumi.png'},
+    {id: 'UmekiOtoha', image: 'https://i.cinderella.pro/u/c/puchi/200187R-Umeki-Otoha-Cool.png'},
+    {id: 'WakabayashiTomoka', image: 'https://i.cinderella.pro/u/c/puchi/300083R-Wakabayashi-Tomoka-Passion.png'},
+    {id: 'WakiyamaTamami', image: 'https://i.cinderella.pro/u/c/puchi/200111R-Wakiyama-Tamami-Cool.png'},
+    {id: 'WakuiRumi', image: 'https://i.cinderella.pro/u/c/puchi/200207R-Wakui-Rumi-Cool.png'},
+    {id: 'YagamiMakino', image: 'https://i.cinderella.pro/u/c/puchi/200127R-Yagami-Makino-Cool.png'},
+    {id: 'YaguchiMiu', image: 'https://i.cinderella.pro/u/c/puchi/300103N-Yaguchi-Miu-Passion.png'},
+    {id: 'YamatoAki', image: 'https://i.cinderella.pro/u/c/puchi/200125R-Yamato-Aki-Cool.png'},
+    {id: 'YanagiKiyora', image: 'https://i.cinderella.pro/u/c/puchi/100277R-Yanagi-Kiyora-Cute.png'},
+    {id: 'YanaseMiyuki', image: 'https://i.cinderella.pro/u/c/puchi/100017R-Yanase-Miyuki.png'},
+    {id: 'YaoFeifei', image: 'https://i.cinderella.pro/u/c/puchi/100207R-Yao-Feifei-Cute.png'},
+    {id: 'YokoyamaChika', image: 'https://i.cinderella.pro/u/c/puchi/100109N-Yokoyama-Chika-Cute.png'},
+    {id: 'YoritaYoshino', image: 'https://i.cinderella.pro/u/c/puchi/300141N-Yorita-Yoshino-Passion.png'},
+    {id: 'YoshiokaSaki', image: 'https://i.cinderella.pro/u/c/puchi/200255N-Yoshioka-Saki-Cool.png'},
+    {id: 'YukiHaru', image: 'https://i.cinderella.pro/u/c/puchi/200141R-Yuki-Haru-Cool.png'},
+    {id: 'YumemiRiamu', image: 'https://i.cinderella.pro/u/c/puchi/300657N-Yumemi-Riamu.png'},
+    {id: 'YusaKozue', image: 'https://i.cinderella.pro/u/c/puchi/100283R-Yusa-Kozue-Cute.png'},
+    {id: 'ZaizenTokiko', image: 'https://i.cinderella.pro/u/c/puchi/300283R-Zaizen-Tokiko.png'}
+];
+
+var myPicker = new picker.Picker({
+    items: items
+});
+
+var pickerUI = new PickerUI(myPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+        evaluating: "#evaluating",
+        favorites: "#favorites"
+    }
+});
+
+pickerUI.initialize();
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
